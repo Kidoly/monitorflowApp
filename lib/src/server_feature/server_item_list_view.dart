@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 
 import '../settings/settings_view.dart';
 import 'server_item.dart';
-import 'server_item_details_view.dart';
 
 class ServerItemListView extends StatelessWidget {
   const ServerItemListView({Key? key});

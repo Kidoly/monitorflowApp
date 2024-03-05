@@ -37,11 +37,11 @@ class ServerItemDetailsView extends StatelessWidget {
         future: fetchServerDetails(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error loading details'));
+            return const Center(child: Text('Error loading details'));
           } else if (!snapshot.hasData) {
-            return Center(child: Text('No data available'));
+            return const Center(child: Text('No data available'));
           } else {
             final details = snapshot.data!;
             final base64Image = details[
@@ -56,15 +56,27 @@ class ServerItemDetailsView extends StatelessWidget {
                   builder: (context, imageSnapshot) {
                     if (imageSnapshot.connectionState ==
                         ConnectionState.waiting) {
-                      return CircularProgressIndicator();
+                      return const CircularProgressIndicator();
                     } else if (imageSnapshot.hasError) {
                       return Text(
                         'Error displaying image: ${imageSnapshot.error}',
-                        style: TextStyle(color: Colors.red),
+                        style: const TextStyle(color: Colors.red),
                       );
                     } else {
-                      return Image(
-                        image: imageSnapshot.data!,
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ZoomedImagePage(
+                                imageProvider: imageSnapshot.data!,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Image(
+                          image: imageSnapshot.data!,
+                        ),
                       );
                     }
                   },
@@ -73,6 +85,25 @@ class ServerItemDetailsView extends StatelessWidget {
             );
           }
         },
+      ),
+    );
+  }
+}
+
+class ZoomedImagePage extends StatelessWidget {
+  final ImageProvider imageProvider;
+
+  const ZoomedImagePage({Key? key, required this.imageProvider})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(),
+      body: Center(
+        child: Image(
+          image: imageProvider,
+        ),
       ),
     );
   }

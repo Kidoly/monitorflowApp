@@ -1,10 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 class ServerItemDetailsView extends StatelessWidget {
-  const ServerItemDetailsView({super.key, required this.serverName});
+  const ServerItemDetailsView({Key? key, required this.serverName})
+      : super(key: key);
 
   final String serverName;
 
@@ -19,6 +19,14 @@ class ServerItemDetailsView extends StatelessWidget {
     }
   }
 
+  Future<ImageProvider> decodeBase64Image(String base64String) async {
+    // Remove the quotes and \/ from the base64 string
+    final cleanedString =
+        base64String.replaceAll('"', '').replaceAll(r'\/', '/');
+    final bytes = base64Decode(cleanedString);
+    return MemoryImage(bytes);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -28,21 +36,41 @@ class ServerItemDetailsView extends StatelessWidget {
       body: FutureBuilder<Map<String, dynamic>>(
         future: fetchServerDetails(),
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error loading details'));
+          } else if (!snapshot.hasData) {
+            return Center(child: Text('No data available'));
+          } else {
             final details = snapshot.data!;
-            // Display details from the map (e.g., CPU usage, uptime, etc.)
+            final base64Image = details[
+                'monitor']; // Assuming 'monitor' is the key for the base64 string
             return ListView(
               children: [
                 ListTile(
-                  title: Text('CPU Usage: ${details['cpu_usage']}%'),
+                  title: Text('Memory: ${details['memory']}'),
                 ),
-                // Add more ListTile widgets for other details based on the API response structure
+                FutureBuilder<ImageProvider>(
+                  future: decodeBase64Image(base64Image),
+                  builder: (context, imageSnapshot) {
+                    if (imageSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return CircularProgressIndicator();
+                    } else if (imageSnapshot.hasError) {
+                      return Text(
+                        'Error displaying image: ${imageSnapshot.error}',
+                        style: TextStyle(color: Colors.red),
+                      );
+                    } else {
+                      return Image(
+                        image: imageSnapshot.data!,
+                      );
+                    }
+                  },
+                ),
               ],
             );
-          } else if (snapshot.hasError) {
-            return const Center(child: Text('Error loading details'));
-          } else {
-            return const Center(child: CircularProgressIndicator());
           }
         },
       ),

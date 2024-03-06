@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:syncfusion_flutter_gauges/gauges.dart';
 
 class ServerItemDetailsView extends StatelessWidget {
   const ServerItemDetailsView({Key? key, required this.serverName})
@@ -46,10 +48,111 @@ class ServerItemDetailsView extends StatelessWidget {
             final details = snapshot.data!;
             final base64Image = details[
                 'monitor']; // Assuming 'monitor' is the key for the base64 string
+            final usedMemoryInGB =
+                (details['used_memory'] / (1024 * 1024 * 1024))
+                    .toStringAsFixed(2);
+            final totalMemoryInGB =
+                (details['total_memory'] / (1024 * 1024 * 1024))
+                    .toStringAsFixed(2);
             return ListView(
               children: [
-                ListTile(
-                  title: Text('Memory: ${details['memory']}'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Text('Last update: ${details['date']}'),
+                                Text('Start time: ${details['start_time']}'),
+                                Text('Cpu usage: ${details['cpu_usage']}%'),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final containerShortestSide =
+                                          constraints.maxWidth <
+                                                  constraints.maxHeight
+                                              ? constraints.maxWidth
+                                              : constraints.maxHeight;
+                                      final needleLength = containerShortestSide *
+                                          0.3; // Adjust the multiplier based on your preference
+
+                                      return SfRadialGauge(
+                                        axes: <RadialAxis>[
+                                          RadialAxis(
+                                            minimum: 0,
+                                            maximum: (details['total_memory'] /
+                                                    (1024 * 1024 * 1024))
+                                                .toDouble(),
+                                            pointers: <GaugePointer>[
+                                              NeedlePointer(
+                                                value: (details['used_memory'] /
+                                                        (1024 * 1024 * 1024))
+                                                    .toDouble(),
+                                                enableAnimation: true,
+                                                animationDuration: 5000,
+                                                knobStyle: const KnobStyle(
+                                                    knobRadius: 0),
+                                                needleLength: needleLength,
+                                                needleEndWidth:
+                                                    needleLength / 10,
+                                                lengthUnit:
+                                                    GaugeSizeUnit.logicalPixel,
+                                              ),
+                                              RangePointer(
+                                                  value:
+                                                      (details['used_memory'] /
+                                                              (1024 *
+                                                                  1024 *
+                                                                  1024))
+                                                          .toDouble(),
+                                                  enableAnimation: true,
+                                                  animationDuration: 5000),
+                                            ],
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(
+                                    height:
+                                        8.0), // Add some space between the gauge and the text
+                                Center(
+                                  child: Text(
+                                    "Memory usage: ${(details['used_memory'] / (1024 * 1024 * 1024)).toStringAsFixed(2)}GB / ${(details['total_memory'] / (1024 * 1024 * 1024)).toStringAsFixed(2)}GB",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 FutureBuilder<ImageProvider>(
                   future: decodeBase64Image(base64Image),
@@ -101,8 +204,13 @@ class ZoomedImagePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(),
       body: Center(
-        child: Image(
-          image: imageProvider,
+        child: InteractiveViewer(
+          boundaryMargin: const EdgeInsets.all(100),
+          minScale: 0.1,
+          maxScale: 4.0,
+          child: Image(
+            image: imageProvider,
+          ),
         ),
       ),
     );

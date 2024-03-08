@@ -30,6 +30,20 @@ class ServerItemDetailsView extends StatelessWidget {
     return MemoryImage(bytes);
   }
 
+  List<ChartData> createChartData(List<dynamic> disks) {
+    return disks.map<ChartData>((disk) {
+      final usedSpace = disk['total_space'] - disk['available_space'];
+      final usedSpacePercentage = (usedSpace / disk['total_space']) * 100;
+      final color = usedSpacePercentage >= 70 ? Colors.red : Colors.green;
+      return ChartData(
+        disk['total_space'],
+        usedSpacePercentage.round(),
+        '${usedSpacePercentage.toStringAsFixed(2)}%',
+        color,
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,6 +69,23 @@ class ServerItemDetailsView extends StatelessWidget {
             final totalMemoryInGB =
                 (details['total_memory'] / (1024 * 1024 * 1024))
                     .toStringAsFixed(2);
+
+            // Parse the disks JSON string into a List<dynamic>
+            final disksJson = details['disks'];
+            final disks = jsonDecode(disksJson) as List<dynamic>;
+
+            int totalTotalSpace = 0;
+            int totalAvailableSpace = 0;
+
+            for (final disk in disks) {
+              totalTotalSpace += disk['total_space'] as int;
+              totalAvailableSpace += disk['available_space'] as int;
+            }
+            final usedSpace = totalTotalSpace - totalAvailableSpace;
+            final averageDiskUsage = usedSpace / totalTotalSpace;
+
+            final chartData = createChartData(disks);
+
             return GridView.count(
               crossAxisCount: MediaQuery.of(context).size.width > 800 ? 2 : 1,
               childAspectRatio: 2,
@@ -172,23 +203,12 @@ class ServerItemDetailsView extends StatelessWidget {
                                 Expanded(
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
-                                      final List<ChartData> chartData = [
-                                        ChartData(
-                                            1924, 90, '100%', Colors.blue),
-                                        ChartData(
-                                            1925, 50, '100%', Colors.green),
-                                        ChartData(1926, 70, '100%', Colors.red),
-                                      ];
-
-                                      final average = chartData.fold<double>(
-                                              0,
-                                              (previousValue, element) =>
-                                                  previousValue + element.y) /
-                                          chartData.length;
+                                      final averageDiskUsagePercentage =
+                                          averageDiskUsage * 100;
 
                                       return charts.SfCircularChart(
                                         title: charts.ChartTitle(
-                                          text: 'Disk Usage',
+                                          text: 'Disks Usage',
                                           textStyle: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
@@ -199,7 +219,7 @@ class ServerItemDetailsView extends StatelessWidget {
                                           charts.CircularChartAnnotation(
                                             widget: Container(
                                               child: Text(
-                                                '${average.toStringAsFixed(0)}%',
+                                                '${averageDiskUsagePercentage.toStringAsFixed(0)}%',
                                                 style: const TextStyle(
                                                     fontWeight: FontWeight.bold,
                                                     fontSize: 18),
@@ -215,7 +235,8 @@ class ServerItemDetailsView extends StatelessWidget {
                                             trackOpacity: 0.3,
                                             cornerStyle:
                                                 charts.CornerStyle.bothCurve,
-                                            dataSource: chartData,
+                                            dataSource:
+                                                chartData, // Replace the hardcoded dataSource with chartData
                                             pointRadiusMapper:
                                                 (ChartData data, _) =>
                                                     data.text,
@@ -226,7 +247,7 @@ class ServerItemDetailsView extends StatelessWidget {
                                                 (ChartData sales, _) => sales.x,
                                             yValueMapper:
                                                 (ChartData sales, _) => sales.y,
-                                          )
+                                          ),
                                         ],
                                       );
                                     },

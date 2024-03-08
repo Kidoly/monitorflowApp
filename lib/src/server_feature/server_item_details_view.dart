@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_gauges/gauges.dart';
+import 'package:syncfusion_flutter_charts/charts.dart' as charts;
 
 class ServerItemDetailsView extends StatelessWidget {
   const ServerItemDetailsView({Key? key, required this.serverName})
@@ -54,7 +55,9 @@ class ServerItemDetailsView extends StatelessWidget {
             final totalMemoryInGB =
                 (details['total_memory'] / (1024 * 1024 * 1024))
                     .toStringAsFixed(2);
-            return ListView(
+            return GridView.count(
+              crossAxisCount: MediaQuery.of(context).size.width > 800 ? 2 : 1,
+              childAspectRatio: 2,
               children: [
                 Row(
                   children: [
@@ -154,35 +157,207 @@ class ServerItemDetailsView extends StatelessWidget {
                     ),
                   ],
                 ),
-                FutureBuilder<ImageProvider>(
-                  future: decodeBase64Image(base64Image),
-                  builder: (context, imageSnapshot) {
-                    if (imageSnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    } else if (imageSnapshot.hasError) {
-                      return Text(
-                        'Error displaying image: ${imageSnapshot.error}',
-                        style: const TextStyle(color: Colors.red),
-                      );
-                    } else {
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ZoomedImagePage(
-                                imageProvider: imageSnapshot.data!,
-                              ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final List<ChartData> chartData = [
+                                        ChartData(
+                                            1924, 90, '100%', Colors.blue),
+                                        ChartData(
+                                            1925, 50, '100%', Colors.green),
+                                        ChartData(1926, 70, '100%', Colors.red),
+                                      ];
+
+                                      final average = chartData.fold<double>(
+                                              0,
+                                              (previousValue, element) =>
+                                                  previousValue + element.y) /
+                                          chartData.length;
+
+                                      return charts.SfCircularChart(
+                                        title: charts.ChartTitle(
+                                          text: 'Disk Usage',
+                                          textStyle: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        annotations: <charts
+                                            .CircularChartAnnotation>[
+                                          charts.CircularChartAnnotation(
+                                            widget: Container(
+                                              child: Text(
+                                                '${average.toStringAsFixed(0)}%',
+                                                style: const TextStyle(
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 18),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                        series: <charts
+                                            .CircularSeries<ChartData, int>>[
+                                          charts.RadialBarSeries<ChartData,
+                                              int>(
+                                            useSeriesColor: true,
+                                            trackOpacity: 0.3,
+                                            cornerStyle:
+                                                charts.CornerStyle.bothCurve,
+                                            dataSource: chartData,
+                                            pointRadiusMapper:
+                                                (ChartData data, _) =>
+                                                    data.text,
+                                            pointColorMapper:
+                                                (ChartData data, _) =>
+                                                    data.color,
+                                            xValueMapper:
+                                                (ChartData sales, _) => sales.x,
+                                            yValueMapper:
+                                                (ChartData sales, _) => sales.y,
+                                          )
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                        child: Image(
-                          image: imageSnapshot.data!,
+                          ),
                         ),
-                      );
-                    }
-                  },
+                      ),
+                    ),
+                    Expanded(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Expanded(
+                                  child: LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final containerShortestSide =
+                                          constraints.maxWidth <
+                                                  constraints.maxHeight
+                                              ? constraints.maxWidth
+                                              : constraints.maxHeight;
+                                      final needleLength = containerShortestSide *
+                                          0.3; // Adjust the multiplier based on your preference
+
+                                      return SfRadialGauge(
+                                        axes: <RadialAxis>[
+                                          RadialAxis(
+                                            minimum: 0,
+                                            maximum: 100,
+                                            pointers: <GaugePointer>[
+                                              NeedlePointer(
+                                                value: (details['cpu_usage'])
+                                                    .toDouble(),
+                                                enableAnimation: true,
+                                                animationDuration: 5000,
+                                                knobStyle: const KnobStyle(
+                                                    knobRadius: 0),
+                                                needleLength: needleLength,
+                                                needleEndWidth:
+                                                    needleLength / 10,
+                                                lengthUnit:
+                                                    GaugeSizeUnit.logicalPixel,
+                                              ),
+                                              RangePointer(
+                                                  value: (details['cpu_usage'])
+                                                      .toDouble(),
+                                                  enableAnimation: true,
+                                                  animationDuration: 5000),
+                                            ],
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(
+                                    height:
+                                        8.0), // Add some space between the gauge and the text
+                                Center(
+                                  child: Text(
+                                    "CPU usage: ${(details['cpu_usage']).round()}%",
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Card(
+                          child: Column(
+                            children: [
+                              AspectRatio(
+                                aspectRatio: 2,
+                                child: FutureBuilder<ImageProvider>(
+                                  future: decodeBase64Image(base64Image),
+                                  builder: (context, imageSnapshot) {
+                                    if (imageSnapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const CircularProgressIndicator();
+                                    } else if (imageSnapshot.hasError) {
+                                      return Text(
+                                        'Error displaying image: ${imageSnapshot.error}',
+                                        style:
+                                            const TextStyle(color: Colors.red),
+                                      );
+                                    } else {
+                                      return GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ZoomedImagePage(
+                                                imageProvider:
+                                                    imageSnapshot.data!,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: Image(
+                                          image: imageSnapshot.data!,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             );
@@ -215,4 +390,13 @@ class ZoomedImagePage extends StatelessWidget {
       ),
     );
   }
+}
+
+class ChartData {
+  final int x;
+  final int y;
+  final String text;
+  final Color color;
+
+  ChartData(this.x, this.y, this.text, this.color);
 }

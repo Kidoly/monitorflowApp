@@ -35,6 +35,7 @@ class ServerItemDetailsView extends StatelessWidget {
       final usedSpace = disk['total_space'] - disk['available_space'];
       final usedSpacePercentage = (usedSpace / disk['total_space']) * 100;
       final color = usedSpacePercentage >= 70 ? Colors.red : Colors.green;
+
       return ChartData(
         disk['total_space'],
         usedSpacePercentage.round(),
@@ -195,11 +196,20 @@ class ServerItemDetailsView extends StatelessWidget {
                         aspectRatio: 1,
                         child: Card(
                           child: Padding(
-                            padding: const EdgeInsets.all(16.0),
+                            padding: const EdgeInsets.all(0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
+                                const SizedBox(height: 16.0),
+                                const Center(
+                                  child: Text(
+                                    "Disks Usage",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18),
+                                  ),
+                                ),
                                 Expanded(
                                   child: LayoutBuilder(
                                     builder: (context, constraints) {
@@ -207,13 +217,6 @@ class ServerItemDetailsView extends StatelessWidget {
                                           averageDiskUsage * 100;
 
                                       return charts.SfCircularChart(
-                                        title: charts.ChartTitle(
-                                          text: 'Disks Usage',
-                                          textStyle: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
                                         annotations: <charts
                                             .CircularChartAnnotation>[
                                           charts.CircularChartAnnotation(
@@ -231,12 +234,11 @@ class ServerItemDetailsView extends StatelessWidget {
                                             .CircularSeries<ChartData, int>>[
                                           charts.RadialBarSeries<ChartData,
                                               int>(
-                                            useSeriesColor: true,
+                                            useSeriesColor: false,
                                             trackOpacity: 0.3,
                                             cornerStyle:
                                                 charts.CornerStyle.bothCurve,
-                                            dataSource:
-                                                chartData, // Replace the hardcoded dataSource with chartData
+                                            dataSource: chartData,
                                             pointRadiusMapper:
                                                 (ChartData data, _) =>
                                                     data.text,

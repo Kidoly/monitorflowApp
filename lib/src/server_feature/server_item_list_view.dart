@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart'; // Add this import
 
 import '../settings/settings_view.dart';
 import 'server_item.dart';
@@ -45,17 +46,27 @@ class ServerItemListView extends StatelessWidget {
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final item = snapshot.data![index];
+                final dateFromApi =
+                    DateFormat('yyyy-MM-dd HH:mm:ss').parse(item.date);
+                final currentDate = DateTime.now();
+                final difference =
+                    currentDate.difference(dateFromApi).inSeconds;
+                final isOverdue = difference > item.intervalTime + 10;
+
                 return ListTile(
                   title: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Text('${item.hostName} - ${item.systemName}'),
+                        child: Text(
+                          '${item.hostName} - ${item.systemName}',
+                          style: TextStyle(
+                              color: isOverdue ? Colors.red : Colors.white),
+                        ),
                       ),
                       LinearProgressIndicator(
-                        value: double.parse(item
-                            .memory), // Assuming item.memory is a double between 0 and 1
+                        value: double.parse(item.memory),
                         backgroundColor: Colors.grey,
                         valueColor:
                             const AlwaysStoppedAnimation<Color>(Colors.blue),
@@ -66,7 +77,7 @@ class ServerItemListView extends StatelessWidget {
                   ),
                   onTap: () {
                     Navigator.restorablePushNamed(context, '/serverDetails',
-                        arguments: item.hostName); // Updated route name
+                        arguments: item.hostName);
                   },
                 );
               },

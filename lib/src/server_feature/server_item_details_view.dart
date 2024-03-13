@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'package:syncfusion_flutter_charts/charts.dart' as charts;
+import 'package:intl/intl.dart';
+import 'dart:math';
 
 class ServerItemDetailsView extends StatelessWidget {
   const ServerItemDetailsView({Key? key, required this.serverName})
@@ -62,14 +64,7 @@ class ServerItemDetailsView extends StatelessWidget {
             return const Center(child: Text('No data available'));
           } else {
             final details = snapshot.data!;
-            final base64Image = details[
-                'monitor']; // Assuming 'monitor' is the key for the base64 string
-            final usedMemoryInGB =
-                (details['used_memory'] / (1024 * 1024 * 1024))
-                    .toStringAsFixed(2);
-            final totalMemoryInGB =
-                (details['total_memory'] / (1024 * 1024 * 1024))
-                    .toStringAsFixed(2);
+            final base64Image = details['monitor'];
 
             // Parse the disks JSON string into a List<dynamic>
             final disksJson = details['disks'];
@@ -87,6 +82,15 @@ class ServerItemDetailsView extends StatelessWidget {
 
             final chartData = createChartData(disks);
 
+            final dateFromApi =
+                DateFormat('yyyy-MM-dd HH:mm:ss').parse(details['date']);
+            final currentDate = DateTime.now();
+            final difference = currentDate.difference(dateFromApi).inSeconds;
+            final isOverdue = difference > details['interval_time'] + 10;
+
+            String Status;
+            isOverdue ? Status = 'Not Online' : Status = 'Online';
+
             return GridView.count(
               crossAxisCount: MediaQuery.of(context).size.width > 800 ? 2 : 1,
               childAspectRatio: 2,
@@ -103,9 +107,33 @@ class ServerItemDetailsView extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                Text('Last update: ${details['date']}'),
-                                Text('Start time: ${details['start_time']}'),
-                                Text('Cpu usage: ${details['cpu_usage']}%'),
+                                const Center(
+                                  child: Text(
+                                    "Status:",
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18),
+                                  ),
+                                ),
+                                Center(
+                                  child: Text(
+                                    Status,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                        color: (isOverdue
+                                            ? Colors.red
+                                            : Colors.green)),
+                                  ),
+                                ),
+                                Center(
+                                  child: Text(
+                                    "Last updated: ${DateFormat('yyyy-MM-dd HH:mm:ss').format(dateFromApi)}",
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                )
                               ],
                             ),
                           ),
@@ -412,6 +440,15 @@ class ZoomedImagePage extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class ScaleSize {
+  static double textScaleFactor(BuildContext context,
+      {double maxTextScaleFactor = 2}) {
+    final width = MediaQuery.of(context).size.width;
+    double val = (width / 1400) * maxTextScaleFactor;
+    return max(1, min(val, maxTextScaleFactor));
   }
 }
 

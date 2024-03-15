@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart'; // Add this import
+import 'package:intl/intl.dart';
+import 'package:monitorflow/src/settings/settings_service.dart';
 
 import '../settings/settings_view.dart';
 import 'server_item.dart';
@@ -12,14 +13,15 @@ class ServerItemListView extends StatelessWidget {
   static const routeName = '/';
 
   Future<List<ServerItem>> fetchServerItems() async {
+    final settingsService = SettingsService();
     final response = await http.get(Uri.parse(
-        'https://albanmary.com/api/api_call.php?api_key=your_secret_api_key_here'));
+        '${settingsService.endpoint}?api_key=${settingsService.apiKey}'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body) as List;
       return data.map((item) => ServerItem.fromJson(item)).toList();
     } else {
-      throw Exception('Failed to load server items');
+      return Future.error('${response.statusCode}: ${response.body}');
     }
   }
 
@@ -83,7 +85,11 @@ class ServerItemListView extends StatelessWidget {
               },
             );
           } else if (snapshot.hasError) {
-            return const Center(child: Text('Error loading data'));
+            return Center(
+                child: Text(
+              'Error loading data:\n${snapshot.error}',
+              textAlign: TextAlign.center,
+            ));
           } else {
             return const Center(child: CircularProgressIndicator());
           }

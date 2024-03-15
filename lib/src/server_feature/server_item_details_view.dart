@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:monitorflow/src/settings/settings_service.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import 'package:syncfusion_flutter_charts/charts.dart' as charts;
 import 'package:intl/intl.dart';
@@ -14,8 +15,9 @@ class ServerItemDetailsView extends StatelessWidget {
   final String serverName;
 
   Future<Map<String, dynamic>> fetchServerDetails() async {
+    final settingsService = SettingsService();
     final response = await http.get(Uri.parse(
-        'https://albanmary.com/api/api_call.php?api_key=your_secret_api_key_here&host_name=$serverName'));
+        '${settingsService.endpoint}?api_key=${settingsService.apiKey}&host_name=$serverName'));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;

@@ -8,10 +8,13 @@ import 'settings_service.dart';
 /// Controllers glue Data Services to Flutter Widgets. The SettingsController
 /// uses the SettingsService to store and retrieve user settings.
 class SettingsController with ChangeNotifier {
-  SettingsController(this._settingsService);
+  SettingsController(this._settingsService)
+      : endpointController = TextEditingController(),
+        apiKeyController = TextEditingController();
 
-  // Make SettingsService a private variable so it is not used directly.
   final SettingsService _settingsService;
+  final TextEditingController endpointController;
+  final TextEditingController apiKeyController;
 
   // Make ThemeMode a private variable so it is not updated directly without
   // also persisting the changes with the SettingsService.
@@ -46,5 +49,23 @@ class SettingsController with ChangeNotifier {
     // Persist the changes to a local database or the internet using the
     // SettingService.
     await _settingsService.updateThemeMode(newThemeMode);
+  }
+
+  Future<void> updateEndpoint(String? newEndpoint) async {
+    if (newEndpoint == null || newEndpoint == _settingsService.endpoint) return;
+
+    await _settingsService.updateEndpoint(newEndpoint);
+    endpointController.text = newEndpoint;
+
+    notifyListeners();
+  }
+
+  Future<void> updateApiKey(String? newApiKey) async {
+    if (newApiKey == null || newApiKey == _settingsService.apiKey) return;
+
+    await _settingsService.updateApiKey(newApiKey);
+    apiKeyController.text = newApiKey;
+
+    notifyListeners();
   }
 }

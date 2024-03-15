@@ -2,26 +2,32 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:monitorflow/src/settings/settings_service.dart';
-
+import '../settings/settings_controller.dart';
 import '../settings/settings_view.dart';
 import 'server_item.dart';
 
 class ServerItemListView extends StatelessWidget {
-  const ServerItemListView({Key? key});
+  const ServerItemListView({Key? key, required this.controller});
 
   static const routeName = '/';
 
-  Future<List<ServerItem>> fetchServerItems() async {
-    final settingsService = SettingsService();
-    final response = await http.get(Uri.parse(
-        '${settingsService.endpoint}?api_key=${settingsService.apiKey}'));
+  final SettingsController controller;
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body) as List;
-      return data.map((item) => ServerItem.fromJson(item)).toList();
-    } else {
-      return Future.error('${response.statusCode}: ${response.body}');
+  Future<List<ServerItem>> fetchServerItems() async {
+    try {
+      final apiKey = await controller.getApiKey();
+      final endpoint = await controller.getEndpoint();
+      final response = await http.get(Uri.parse('$endpoint?api_key=$apiKey'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as List;
+        return data.map((item) => ServerItem.fromJson(item)).toList();
+      } else {
+        return Future.error('${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      // Display the error message if there's an exception
+      return Future.error('$e');
     }
   }
 

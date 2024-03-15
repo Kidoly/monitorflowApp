@@ -17,9 +17,6 @@ class SettingsService {
     // Use the shared_preferences package to persist settings locally or the
     // http package to persist settings over the network.
   }
-  // Add methods to get and update endpoint and API key
-  String get endpoint => _endpoint;
-  String get apiKey => _apiKey;
 
   Future<void> updateEndpoint(String newEndpoint) async {
     _endpoint = newEndpoint;
@@ -30,4 +27,8 @@ class SettingsService {
     _apiKey = newApiKey;
     // Persist the changes to a local database or the internet using the SettingService.
   }
+
+  // Add methods to get and update endpoint and API key
+  String get endpoint => _endpoint;
+  String get apiKey => _apiKey;
 }

@@ -53,7 +53,9 @@ class MyApp extends StatelessWidget {
                     );
                   case '/': // Default route for ServerItemListView
                   default:
-                    return const ServerItemListView();
+                    return ServerItemListView(
+                        controller:
+                            settingsController); // Pass the SettingsController to the ServerItemListView
                 }
               },
             );

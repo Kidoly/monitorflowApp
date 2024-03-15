@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'settings_controller.dart';
 
 /// Displays the various settings that can be customized by the user.
@@ -51,9 +50,47 @@ class SettingsView extends StatelessWidget {
               decoration: const InputDecoration(labelText: 'API Key'),
               controller: controller.apiKeyController,
             ),
+            ElevatedButton(
+              onPressed: () {
+                // Save the API key and endpoint when the button is pressed
+                controller.saveApiKey(controller.apiKeyController.text);
+                controller.saveEndpoint(controller.endpointController.text);
+              },
+              child: const Text('Save'),
+            ),
           ],
         ),
       ),
     );
+  }
+}
+
+class SettingsViewStateful extends StatefulWidget {
+  const SettingsViewStateful({super.key, required this.controller});
+
+  final SettingsController controller;
+
+  @override
+  _SettingsViewStatefulState createState() => _SettingsViewStatefulState();
+}
+
+class _SettingsViewStatefulState extends State<SettingsViewStateful> {
+  late final SettingsController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = widget.controller;
+    _initializeControllers();
+  }
+
+  Future<void> _initializeControllers() async {
+    _controller.apiKeyController.text = await _controller.getApiKey();
+    _controller.endpointController.text = await _controller.getEndpoint();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingsView(controller: _controller);
   }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'settings_service.dart';
 
 /// A class that many Widgets can interact with to read user settings, update
@@ -51,6 +51,16 @@ class SettingsController with ChangeNotifier {
     await _settingsService.updateThemeMode(newThemeMode);
   }
 
+  Future<String> getApiKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('apiKey') ?? '';
+  }
+
+  Future<String> getEndpoint() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('endpoint') ?? '';
+  }
+
   Future<void> updateEndpoint(String? newEndpoint) async {
     if (newEndpoint == null || newEndpoint == _settingsService.endpoint) return;
 
@@ -67,5 +77,15 @@ class SettingsController with ChangeNotifier {
     apiKeyController.text = newApiKey;
 
     notifyListeners();
+  }
+
+  Future<void> saveApiKey(String apiKey) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('apiKey', apiKey);
+  }
+
+  Future<void> saveEndpoint(String endpoint) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('endpoint', endpoint);
   }
 }

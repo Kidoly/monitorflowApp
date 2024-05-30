@@ -8,16 +8,41 @@ import 'package:syncfusion_flutter_charts/charts.dart' as charts;
 import 'package:intl/intl.dart';
 import 'dart:math';
 
-class ServerItemDetailsView extends StatelessWidget {
+class ServerItemDetailsView extends StatefulWidget {
   const ServerItemDetailsView({Key? key, required this.serverName})
       : super(key: key);
 
   final String serverName;
 
+  @override
+  _ServerItemDetailsViewState createState() => _ServerItemDetailsViewState();
+}
+
+class _ServerItemDetailsViewState extends State<ServerItemDetailsView> {
+  late Timer _timer;
+  late Future<Map<String, dynamic>> _futureServerDetails;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureServerDetails = fetchServerDetails();
+    _timer = Timer.periodic(Duration(seconds: 30), (timer) {
+      setState(() {
+        _futureServerDetails = fetchServerDetails(); // Refresh the data
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel(); // Don't forget to cancel the timer
+    super.dispose();
+  }
+
   Future<Map<String, dynamic>> fetchServerDetails() async {
     final settingsService = SettingsService();
     final response = await http.get(Uri.parse(
-        '${settingsService.endpoint}?api_key=${settingsService.apiKey}&host_name=$serverName'));
+        '${settingsService.endpoint}?api_key=${settingsService.apiKey}&host_name=${widget.serverName}'));
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as Map<String, dynamic>;
@@ -53,15 +78,16 @@ class ServerItemDetailsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Details for $serverName'),
+        title: Text('Details for ${widget.serverName}'),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: fetchServerDetails(),
+        future: _futureServerDetails,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return const Center(child: Text('Error loading details'));
+            return Center(
+                child: Text('Error loading details: ${snapshot.error}'));
           } else if (!snapshot.hasData) {
             return const Center(child: Text('No data available'));
           } else {
